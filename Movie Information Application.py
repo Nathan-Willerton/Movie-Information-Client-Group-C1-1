@@ -76,6 +76,16 @@ def retrieve_search():
         messagebox.showinfo("Sorry!", "We couldn't find a movie by that name!")
 
 
+def save_item():
+    search_term = searchbar_entry.get()
+
+    input_json = query_omdb(search_term)
+
+    list_item = input_json['Title']
+
+    wishlist_box.insert(1, list_item)
+
+
 # The frame used to contain the search toolbar
 search_frame = Frame(root)
 search_frame.pack(side="top", fill=X)
@@ -86,6 +96,10 @@ searchbar_entry.pack(side="left")
 # A button which when clicked calls the retrieve_search function.
 search_button = Button(search_frame, text="Search!", command=retrieve_search)
 search_button.pack(side="left")
+
+# A button which when clicked calls the retrieve_search function.
+save_button = Button(search_frame, text="Save!", command=save_item)
+save_button.pack(side="left")
 
 # The frame used to contain all movie info
 info_frame = Frame(root)
@@ -182,5 +196,8 @@ wishlist_frame.pack(side="right", fill=Y)
 
 wishlist_label = Label(wishlist_frame, text="Wish-list:")
 wishlist_label.pack()
+
+wishlist_box = Listbox(wishlist_frame)
+wishlist_box.pack()
 
 root.mainloop()
