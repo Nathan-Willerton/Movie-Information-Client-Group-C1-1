@@ -3,12 +3,18 @@ from tkinter import *
 from tkinter import messagebox
 from requests import *
 from PIL import ImageTk, Image
+import random
+import os
+import atexit
 
 # Use pip install requests & pip install pillow if needed.
 
 root = Tk()
 
-#
+# Setting the window title.
+root.title("Movie Information Application")
+
+# The string variables which can be changed to present data on the GUI.
 returned_title = StringVar()
 returned_year = StringVar()
 returned_rated = StringVar()
@@ -23,6 +29,7 @@ returned_language = StringVar()
 returned_country = StringVar()
 returned_awards = StringVar()
 
+# Setting the place holder image.
 poster_image = ImageTk.PhotoImage(Image.open("images/empty.jpg"))
 
 
@@ -44,61 +51,136 @@ def download_image(url):
 def retrieve_search():
     search_term = searchbar_entry.get()
 
-    input_json = query_omdb(search_term)
+    query_json = query_omdb(search_term)
 
-    response = input_json['Response']
+    response = query_json['Response']
 
     # An if statement which checks if the API response is true, if false the API could not find a match.
     if response == "True":
 
-        returned_title.set(input_json['Title'])
-        returned_year.set(input_json['Year'])
-        returned_rated.set(input_json['Rated'])
-        returned_released.set(input_json['Released'])
-        returned_runtime.set(input_json['Runtime'])
-        returned_genre.set(input_json['Genre'])
-        returned_director.set(input_json['Director'])
-        returned_writer.set(input_json['Writer'])
-        returned_actors.set(input_json['Actors'])
-        returned_plot.set(input_json['Plot'])
-        returned_language.set(input_json['Language'])
-        returned_country.set(input_json['Country'])
-        returned_awards.set(input_json['Awards'])
-        returned_poster = input_json['Poster']
+        returned_title.set(query_json['Title'])
+        returned_year.set(query_json['Year'])
+        returned_rated.set(query_json['Rated'])
+        returned_released.set(query_json['Released'])
+        returned_runtime.set(query_json['Runtime'])
+        returned_genre.set(query_json['Genre'])
+        returned_director.set(query_json['Director'])
+        returned_writer.set(query_json['Writer'])
+        returned_actors.set(query_json['Actors'])
+        returned_plot.set(query_json['Plot'])
+        returned_language.set(query_json['Language'])
+        returned_country.set(query_json['Country'])
+        returned_awards.set(query_json['Awards'])
+        returned_poster = query_json['Poster']
 
+        # These if statements check if there's valid URL to the poster image if not the "noposter.jpg" p
+        # place holder is used.
+
+        poster_present = query_json['Poster']
+
+        if poster_present == "N/A":
+            new_poster = ImageTk.PhotoImage(Image.open("images/noposter.jpg"))
+            poster_label.configure(image=new_poster)
+            poster_label.PhotoImage = new_poster
+        else:
+            # Download the new poster from the URL supplied in the JSON.
+            download_image(returned_poster)
+            new_poster = ImageTk.PhotoImage(Image.open("images/temp.jpg"))
+            poster_label.configure(image=new_poster)
+            poster_label.PhotoImage = new_poster
+
+    else:
+        messagebox.showinfo("Sorry!", "We couldn't find a movie by that name!")
+
+
+# This function is used to save the current movie to the wishlist.
+def save_item():
+    try:
+        search_term = searchbar_entry.get()
+        input_json = query_omdb(search_term)
+        list_item = input_json['Title']
+    except:
+        query_json = get("http://www.omdbapi.com/?i=tt" + random_id + "&apikey=b2f11028").json()
+        list_item = query_json['Title']
+
+    wishlist_box.insert(1, list_item)
+
+
+# This function is used to find a random movie using IMDB id's selected from a preset range.
+def random_movie():
+    searchbar_entry.delete(0, 'end')
+
+    movie_ids = ['0371746', '1843866', '4154756', '3501632', '13008540', '2395427', '0848228', '2250912', '1825683',
+                 '5095030', '1228705', '5095030', '0458339', '2015381', '0800369', '0800080', '0478970', '1211837',
+                 '3896198', '1981115']
+
+    query_id = movie_ids[random.randrange(len(movie_ids))]
+
+    query_json = get("http://www.omdbapi.com/?i=tt" + query_id + "&apikey=b2f11028").json()
+
+    global random_id
+    random_id = query_id
+
+    returned_title.set(query_json['Title'])
+    returned_year.set(query_json['Year'])
+    returned_rated.set(query_json['Rated'])
+    returned_released.set(query_json['Released'])
+    returned_runtime.set(query_json['Runtime'])
+    returned_genre.set(query_json['Genre'])
+    returned_director.set(query_json['Director'])
+    returned_writer.set(query_json['Writer'])
+    returned_actors.set(query_json['Actors'])
+    returned_plot.set(query_json['Plot'])
+    returned_language.set(query_json['Language'])
+    returned_country.set(query_json['Country'])
+    returned_awards.set(query_json['Awards'])
+    returned_poster = query_json['Poster']
+
+    # These if statements check if there's valid URL to the poster image if not the "noposter.jpg" p
+    # place holder is used.
+
+    poster_present = query_json['Poster']
+
+    if poster_present == "N/A":
+        new_poster = ImageTk.PhotoImage(Image.open("images/noposter.jpg"))
+        poster_label.configure(image=new_poster)
+        poster_label.PhotoImage = new_poster
+
+    else:
         # Download the new poster from the URL supplied in the JSON.
         download_image(returned_poster)
         new_poster = ImageTk.PhotoImage(Image.open("images/temp.jpg"))
         poster_label.configure(image=new_poster)
         poster_label.PhotoImage = new_poster
 
-    else:
-        messagebox.showinfo("Sorry!", "We couldn't find a movie by that name!")
 
+# A function to delete "temp.jpg".
+def remove_temp():
+    try:
+        os.remove("images/temp.jpg")
+    except:
+        pass
 
-def save_item():
-    search_term = searchbar_entry.get()
-
-    input_json = query_omdb(search_term)
-
-    list_item = input_json['Title']
-
-    wishlist_box.insert(1, list_item)
+# Initialising and positioning the GUI elements.
 
 
 # The frame used to contain the search toolbar
-search_frame = Frame(root)
-search_frame.pack(side="top", fill=X)
+toolbar_menu = Frame(root)
+toolbar_menu.pack(side="top", fill=X)
 
-searchbar_entry = Entry(search_frame)
+searchbar_entry = Entry(toolbar_menu)
 searchbar_entry.pack(side="left")
 
 # A button which when clicked calls the retrieve_search function.
-search_button = Button(search_frame, text="Search!", command=retrieve_search)
+search_button = Button(toolbar_menu, text="Search", command=retrieve_search)
 search_button.pack(side="left")
 
-# A button which when clicked calls the retrieve_search function.
-save_button = Button(search_frame, text="Save!", command=save_item)
+# A button which when clicked calls the save_item function.
+save_button = Button(toolbar_menu, text="Save", command=save_item)
+save_button.pack(side="left")
+
+# A button which when clicked calls the save_item function.
+save_button = Button(toolbar_menu, text="Random!", command=random_movie)
 save_button.pack(side="left")
 
 # The frame used to contain all movie info
@@ -201,3 +283,6 @@ wishlist_box = Listbox(wishlist_frame)
 wishlist_box.pack()
 
 root.mainloop()
+
+# Remove the "temp.jpg" on application exit.
+atexit.register(remove_temp)
